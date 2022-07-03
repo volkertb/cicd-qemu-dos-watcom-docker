@@ -94,17 +94,12 @@ RUN echo "  return 0;" >> HELLO.C
 RUN echo "}" >> HELLO.C
 RUN unix2dos HELLO.C
 
-RUN ls -lh
-
 RUN echo "BIN\\DEVLOAD /H BIN\\UHDD.SYS /S20 /H" > CICD_DOS.BAT # TODO: move UHDD install to the base ("FROM:") image
 RUN echo "TYPE A:\\FDAUTO.BAT" >> CICD_DOS.BAT
 RUN echo "PATH" >> CICD_DOS.BAT
 RUN echo "WCC HELLO.C" >> CICD_DOS.BAT
 RUN echo "WLINK SYS DOS FILE HELLO.OBJ" >> CICD_DOS.BAT
 RUN echo "HELLO" >> CICD_DOS.BAT
-RUN echo "DIR /P" >> CICD_DOS.BAT
-RUN echo "DIR /P A:" >> CICD_DOS.BAT
-RUN echo "DIR /P D:" >> CICD_DOS.BAT
 RUN echo "A:\\FREEDOS\\BIN\\MEM" >> CICD_DOS.BAT
 RUN unix2dos CICD_DOS.BAT
 
