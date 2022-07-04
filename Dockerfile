@@ -1,10 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # With thanks to https://unix.stackexchange.com/a/629494 for showing that mtools is not just for floppy images :)
-# TODO: move installation/configuration of `uhdd`, `devload`, `FILES=...` and `BUFFERS=...` to the base image
-FROM ghcr.io/volkertb/cicd-qemu-dos-docker:v1.2
+FROM ghcr.io/volkertb/cicd-qemu-dos-docker:v1.3
 ARG WATCOM_C_DOWNLOAD_SHA256=3798477fe361ed756bb809c615dd885fb3ef2e310af921767f0c3fdfee336473
-ARG UHDD_SHA256=3b1ce2441e17adcd6aa80065b4181e5485e4f93a0ba87391d004741e43deb9d3
-ARG DEVLOAD_SHA256=dcc085e01f26ab97ac5ae052d485d3e323703922c64da691b90c9b1505bcfd76
 
 RUN mkdir /tmp/drive_c \
     && cd /tmp/drive_c \
@@ -15,27 +12,11 @@ RUN mkdir /tmp/drive_c \
     && mformat -i /tmp/watcom-installer.img -v WATCOM_INST :: \
     && mcopy -i /tmp/watcom-installer.img OWC2INST.EXE ::OWC2INST.EXE \
     && rm OWC2INST.EXE \
-    && wget -nv https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/distributions/1.2/repos/drivers/uhdd.zip \
-    && echo "$UHDD_SHA256  uhdd.zip" | sha256sum -c - \
-    && unzip uhdd.zip BIN/UHDD.SYS \
-    && wget -nv https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/distributions/1.2/repos/base/devload.zip \
-    && echo "$DEVLOAD_SHA256  devload.zip" | sha256sum -c - \
-    && unzip devload.zip BIN/DEVLOAD.COM \
-    && rm devload.zip \
     && dd if=/dev/zero of=/media/watcom-installation.img bs=1M count=64 \
     && mformat -i /media/watcom-installation.img -v WATCOM_DISK :: \
-    && echo "BIN\\DEVLOAD /H BIN\\UHDD.SYS /S20 /H" > CICD_DOS.BAT \
-    && echo "ECHO Installing Open Watcom C installation in DOS... (This will take a while, without visual progress!)" >> CICD_DOS.BAT \
+    && echo "ECHO Installing Open Watcom C installation in DOS... (This will take a while, without visual progress!)" > CICD_DOS.BAT \
     && echo "E:\\owc2inst.exe -dDstDir=D:\\WATCOM -s" >> CICD_DOS.BAT \
     && echo "ECHO Installation complete." >> CICD_DOS.BAT \
-    && mcopy -i /media/x86BOOT.img ::FDCONFIG.SYS /tmp/FDCONFIG.SYS \
-    && echo "FILES=40" >> /tmp/FDCONFIG.SYS \
-    && echo "BUFFERS=20" >> /tmp/FDCONFIG.SYS \
-    && echo "LASTDRIVE=Z" >> /tmp/FDCONFIG.SYS \
-    && unix2dos /tmp/FDCONFIG.SYS \
-    && mdel -i /media/x86BOOT.img ::FDCONFIG.SYS \
-    && mcopy -i /media/x86BOOT.img /tmp/FDCONFIG.SYS ::FDCONFIG.SYS \
-    && rm /tmp/FDCONFIG.SYS \
     && echo "$(date) : Proceeding with Open Watcom C installation in DOS. This will take a while, without visual progress!" \
     && qemu-system-i386 \
 -nographic \
@@ -69,13 +50,9 @@ RUN mkdir /tmp/drive_c \
     && echo "  return 0;" >> HELLO.C \
     && echo "}" >> HELLO.C \
     && unix2dos HELLO.C \
-    && echo "BIN\\DEVLOAD /H BIN\\UHDD.SYS /S20 /H" > CICD_DOS.BAT \
-    && echo "TYPE A:\\FDAUTO.BAT" >> CICD_DOS.BAT \
-    && echo "PATH" >> CICD_DOS.BAT \
     && echo "WCC HELLO.C" >> CICD_DOS.BAT \
     && echo "WLINK SYS DOS FILE HELLO.OBJ" >> CICD_DOS.BAT \
     && echo "HELLO" >> CICD_DOS.BAT \
-    && echo "A:\\FREEDOS\\BIN\\MEM" >> CICD_DOS.BAT \
     && unix2dos CICD_DOS.BAT \
     && qemu-system-i386 \
 -nographic \
